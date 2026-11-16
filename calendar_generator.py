@@ -1,34 +1,388 @@
 #!/usr/bin/env python3
-"""Generate a rolling Slovak iCalendar feed.
-Requires skyfield for accurate moon phases and equinoxes/solstices.
-School holidays are data-driven: update SCHOOL_HOLIDAYS when the Slovak Ministry publishes new dates.
-"""
 from datetime import date, timedelta
 from pathlib import Path
 import calendar, uuid
 
-OUT = Path('robert-kalendar.ics')
-START_YEAR = date.today().year
-END_YEAR = START_YEAR + 2
-
-# Nitriansky kraj. Add official Ministry terms here when published.
-SCHOOL_HOLIDAYS = {
-  2027: [
-    ('2027-01-01','2027-01-08','🎄 Vianočné prázdniny'),
-    ('2027-02-01','2027-02-02','🏫 Polročné prázdniny'),
-    ('2027-03-01','2027-03-06','🏫 Jarné prázdniny – Nitriansky kraj'),
-    ('2027-03-25','2027-03-31','🐣 Veľkonočné prázdniny'),
-    ('2027-07-01','2027-09-01','☀️ Letné prázdniny'),
-    ('2027-10-28','2027-10-30','🍂 Jesenné prázdniny'),
-    ('2027-12-23','2028-01-08','🎄 Vianočné prázdniny'),
-  ]
+OUT=Path("robert-kalendar.ics")
+TODAY=date.today()
+START_YEAR=TODAY.year
+END_YEAR=TODAY.year+2
+NAMES={
+    (1,2): 'Alexandra\\, Sandra\\, Karina',
+    (1,3): 'Daniela',
+    (1,4): 'Drahoslav',
+    (1,5): 'Andrea\\, Artur',
+    (1,6): 'Antónia',
+    (1,7): 'Bohuslava\\, Atila',
+    (1,8): 'Severín',
+    (1,9): 'Alexej\\, Alex\\, Alexia',
+    (1,10): 'Daša',
+    (1,11): 'Malvína',
+    (1,12): 'Ernest\\, Ernestína',
+    (1,13): 'Rastislav',
+    (1,14): 'Radovan\\, Radovana',
+    (1,15): 'Dobroslav\\, Dobroslava',
+    (1,16): 'Kristína',
+    (1,17): 'Nataša',
+    (1,18): 'Bohdana',
+    (1,19): 'Mário\\, Sára\\, Zara',
+    (1,20): 'Dalibor\\, Sebastián\\, Fabián',
+    (1,21): 'Vincent',
+    (1,22): 'Zora\\, Zoran\\, Auróra',
+    (1,23): 'Miloš',
+    (1,24): 'Timotej\\, Timon\\, Tímea',
+    (1,25): 'Gejza',
+    (1,26): 'Tamara',
+    (1,27): 'Bohuš',
+    (1,28): 'Alfonz',
+    (1,29): 'Gašpar',
+    (1,30): 'Ema',
+    (1,31): 'Emil',
+    (2,1): 'Tatiana\\, Táňa',
+    (2,2): 'Erich\\, Erik\\, Erika',
+    (2,3): 'Blažej',
+    (2,4): 'Veronika',
+    (2,5): 'Agáta',
+    (2,6): 'Dorota',
+    (2,7): 'Vanda',
+    (2,8): 'Zoja',
+    (2,9): 'Zdeno\\, Zdenko\\, Ronald',
+    (2,10): 'Gabriela',
+    (2,11): 'Dezider',
+    (2,12): 'Perla',
+    (2,13): 'Arpád',
+    (2,14): 'Valentín',
+    (2,15): 'Pravoslav',
+    (2,16): 'Ida\\, Liana',
+    (2,17): 'Miloslava',
+    (2,18): 'Jaromír\\, Jaromíra',
+    (2,19): 'Vlasta',
+    (2,20): 'Lívia\\, Aladár',
+    (2,21): 'Eleonóra',
+    (2,22): 'Etela',
+    (2,23): 'Roman\\, Romana',
+    (2,24): 'Matej\\, Matiáš\\, Matias',
+    (2,25): 'Frederik\\, Frederika',
+    (2,26): 'Viktor',
+    (2,27): 'Alexander',
+    (2,28): 'Zlatica',
+    (3,1): 'Albín',
+    (3,2): 'Anežka',
+    (3,3): 'Bohumil\\, Bohumila',
+    (3,4): 'Kazimír',
+    (3,5): 'Fridrich',
+    (3,6): 'Radoslav\\, Radoslava',
+    (3,7): 'Tomáš',
+    (3,8): 'Alan\\, Alana',
+    (3,9): 'Františka',
+    (3,10): 'Branislav\\, Bronislav\\, Bruno',
+    (3,11): 'Angela\\, Angelika',
+    (3,12): 'Gregor',
+    (3,13): 'Vlastimil\\, Letícia',
+    (3,14): 'Matilda',
+    (3,15): 'Svetlana',
+    (3,16): 'Boleslav',
+    (3,17): 'Ľubica',
+    (3,18): 'Eduard',
+    (3,19): 'Jozef',
+    (3,20): 'Víťazoslav',
+    (3,21): 'Blahoslav',
+    (3,22): 'Beňadik\\, Benedikt',
+    (3,23): 'Adrián',
+    (3,24): 'Gabriel',
+    (3,25): 'Marián',
+    (3,26): 'Emanuel',
+    (3,27): 'Alena',
+    (3,28): 'Soňa',
+    (3,29): 'Miroslav',
+    (3,30): 'Vieroslava',
+    (3,31): 'Benjamín',
+    (4,1): 'Hugo',
+    (4,2): 'Zita',
+    (4,3): 'Richard',
+    (4,4): 'Izidor',
+    (4,5): 'Miroslava',
+    (4,6): 'Irena',
+    (4,7): 'Zoltán',
+    (4,8): 'Albert',
+    (4,9): 'Milena',
+    (4,10): 'Igor',
+    (4,11): 'Július',
+    (4,12): 'Estera',
+    (4,13): 'Aleš',
+    (4,14): 'Justína',
+    (4,15): 'Fedor',
+    (4,16): 'Dana\\, Danica',
+    (4,17): 'Rudolf',
+    (4,18): 'Valér',
+    (4,19): 'Jela',
+    (4,20): 'Marcel',
+    (4,21): 'Ervín',
+    (4,22): 'Slavomír',
+    (4,23): 'Vojtech',
+    (4,24): 'Juraj',
+    (4,25): 'Marek',
+    (4,26): 'Jaroslava',
+    (4,27): 'Jaroslav',
+    (4,28): 'Jarmila',
+    (4,29): 'Lea',
+    (4,30): 'Anastázia',
+    (5,2): 'Žigmund',
+    (5,3): 'Galina\\, Timea',
+    (5,4): 'Florián',
+    (5,5): 'Lesana',
+    (5,6): 'Hermína',
+    (5,7): 'Monika',
+    (5,8): 'Ingrida',
+    (5,9): 'Roland',
+    (5,10): 'Viktória',
+    (5,11): 'Blažena',
+    (5,12): 'Pankrác',
+    (5,13): 'Servác',
+    (5,14): 'Bonifác',
+    (5,15): 'Žofia\\, Sofia',
+    (5,16): 'Svetozár',
+    (5,17): 'Gizela',
+    (5,18): 'Viola',
+    (5,19): 'Gertrúda',
+    (5,20): 'Bernard',
+    (5,21): 'Zina',
+    (5,22): 'Júlia\\, Juliana',
+    (5,23): 'Želmíra',
+    (5,24): 'Ela\\, Vanesa',
+    (5,25): 'Urban',
+    (5,26): 'Dušan',
+    (5,27): 'Iveta',
+    (5,28): 'Viliam',
+    (5,29): 'Vilma',
+    (5,30): 'Ferdinand',
+    (5,31): 'Petronela\\, Petrana',
+    (6,1): 'Žaneta',
+    (6,2): 'Xénia',
+    (6,3): 'Karolína',
+    (6,4): 'Lenka',
+    (6,5): 'Laura',
+    (6,6): 'Norbert',
+    (6,7): 'Róbert',
+    (6,8): 'Medard',
+    (6,9): 'Stanislava',
+    (6,10): 'Margaréta\\, Gréta',
+    (6,11): 'Dobroslava',
+    (6,12): 'Zlatko',
+    (6,13): 'Anton',
+    (6,14): 'Vasil',
+    (6,15): 'Vít',
+    (6,16): 'Blanka\\, Bianka',
+    (6,17): 'Adolf',
+    (6,18): 'Vratislav',
+    (6,19): 'Alfréd',
+    (6,20): 'Valéria',
+    (6,21): 'Alojz',
+    (6,22): 'Paulína',
+    (6,23): 'Sidónia',
+    (6,24): 'Ján',
+    (6,25): 'Tadeáš\\, Olívia',
+    (6,26): 'Adriána',
+    (6,27): 'Ladislav\\, Ladislava',
+    (6,28): 'Beáta',
+    (6,29): 'Peter\\, Pavol\\, Petra',
+    (6,30): 'Melánia',
+    (7,1): 'Diana',
+    (7,2): 'Berta',
+    (7,3): 'Miloslav',
+    (7,4): 'Prokop',
+    (7,5): 'Cyril\\, Metod',
+    (7,6): 'Patrik\\, Patrícia',
+    (7,7): 'Oliver',
+    (7,8): 'Ivan',
+    (7,9): 'Lujza',
+    (7,10): 'Amália',
+    (7,11): 'Milota',
+    (7,12): 'Nina',
+    (7,13): 'Margita',
+    (7,14): 'Kamil',
+    (7,15): 'Henrich',
+    (7,16): 'Drahomír\\, Drahomíra',
+    (7,17): 'Bohuslav',
+    (7,18): 'Kamila',
+    (7,19): 'Dušana',
+    (7,20): 'Iľja\\, Eliáš',
+    (7,21): 'Daniel',
+    (7,22): 'Magdaléna',
+    (7,23): 'Oľga',
+    (7,24): 'Vladimír',
+    (7,25): 'Jakub',
+    (7,26): 'Anna\\, Hana\\, Anita',
+    (7,27): 'Božena',
+    (7,28): 'Krištof',
+    (7,29): 'Marta',
+    (7,30): 'Libuša',
+    (7,31): 'Ignác',
+    (8,1): 'Božidara',
+    (8,2): 'Gustáv',
+    (8,3): 'Jerguš',
+    (8,4): 'Dominik\\, Dominika',
+    (8,5): 'Hortenzia',
+    (8,6): 'Jozefína',
+    (8,7): 'Štefánia',
+    (8,8): 'Oskar',
+    (8,9): 'Ľubomíra',
+    (8,10): 'Vavrinec',
+    (8,11): 'Zuzana',
+    (8,12): 'Darina',
+    (8,13): 'Ľubomír',
+    (8,14): 'Mojmír',
+    (8,15): 'Marcela',
+    (8,16): 'Leonard',
+    (8,17): 'Milica',
+    (8,18): 'Elena\\, Helena',
+    (8,19): 'Lýdia',
+    (8,20): 'Anabela',
+    (8,21): 'Jana',
+    (8,22): 'Tichomír',
+    (8,23): 'Filip',
+    (8,24): 'Bartolomej',
+    (8,25): 'Ľudovít',
+    (8,26): 'Samuel',
+    (8,27): 'Silvia',
+    (8,28): 'Augustín',
+    (8,29): 'Nikola\\, Nikolaj',
+    (8,30): 'Ružena',
+    (8,31): 'Nora',
+    (9,1): 'Drahoslava',
+    (9,2): 'Linda\\, Rebeka',
+    (9,3): 'Belo',
+    (9,4): 'Rozália',
+    (9,5): 'Regína',
+    (9,6): 'Alica',
+    (9,7): 'Marianna',
+    (9,8): 'Miriama',
+    (9,9): 'Martina',
+    (9,10): 'Oleg',
+    (9,11): 'Bystrík',
+    (9,12): 'Mária',
+    (9,13): 'Ctibor',
+    (9,14): 'Ľudomil',
+    (9,15): 'Jolana',
+    (9,16): 'Ľudmila',
+    (9,17): 'Olympia',
+    (9,18): 'Eugenia',
+    (9,19): 'Konštantín',
+    (9,20): 'Ľuboslav\\, Ľuboslava',
+    (9,21): 'Matúš',
+    (9,22): 'Móric',
+    (9,23): 'Zdenka',
+    (9,24): 'Ľuboš\\, Ľubor',
+    (9,25): 'Vladislav',
+    (9,26): 'Edita',
+    (9,27): 'Cyprián',
+    (9,28): 'Václav',
+    (9,29): 'Michal\\, Michaela',
+    (9,30): 'Jarolím',
+    (10,1): 'Arnold',
+    (10,2): 'Levoslav',
+    (10,3): 'Stela',
+    (10,4): 'František',
+    (10,5): 'Viera',
+    (10,6): 'Natália',
+    (10,7): 'Eliška',
+    (10,8): 'Brigita',
+    (10,9): 'Dionýz',
+    (10,10): 'Slavomíra',
+    (10,11): 'Valentína',
+    (10,12): 'Maximilián',
+    (10,13): 'Koloman',
+    (10,14): 'Boris',
+    (10,15): 'Terézia',
+    (10,16): 'Vladimíra',
+    (10,17): 'Hedviga',
+    (10,18): 'Lukáš',
+    (10,19): 'Kristián',
+    (10,20): 'Vendelín',
+    (10,21): 'Uršuľa',
+    (10,22): 'Sergej',
+    (10,23): 'Alojzia',
+    (10,24): 'Kvetoslava',
+    (10,25): 'Aurel',
+    (10,26): 'Demeter',
+    (10,27): 'Sabína',
+    (10,28): 'Dobromila',
+    (10,29): 'Klára',
+    (10,30): 'Šimon\\, Simona',
+    (10,31): 'Aurélia',
+    (11,2): 'Dušičky',
+    (11,3): 'Hubert',
+    (11,4): 'Karol',
+    (11,5): 'Imrich',
+    (11,6): 'Renáta',
+    (11,7): 'René',
+    (11,8): 'Bohumír',
+    (11,9): 'Teodor',
+    (11,10): 'Tibor',
+    (11,11): 'Martin\\, Maroš',
+    (11,12): 'Svätopluk',
+    (11,13): 'Stanislav',
+    (11,14): 'Irma',
+    (11,15): 'Leopold',
+    (11,16): 'Agnesa',
+    (11,17): 'Klaudia',
+    (11,18): 'Eugen',
+    (11,19): 'Alžbeta',
+    (11,20): 'Félix',
+    (11,21): 'Elvíra',
+    (11,22): 'Cecília',
+    (11,23): 'Klement',
+    (11,24): 'Emília',
+    (11,25): 'Katarína',
+    (11,26): 'Kornel',
+    (11,27): 'Milan',
+    (11,28): 'Henrieta',
+    (11,29): 'Vratko',
+    (11,30): 'Ondrej\\, Andrej',
+    (12,1): 'Edmund',
+    (12,2): 'Bibiána',
+    (12,3): 'Oldrich',
+    (12,4): 'Barbora\\, Barbara',
+    (12,5): 'Oto',
+    (12,6): 'Mikuláš',
+    (12,7): 'Ambróz',
+    (12,8): 'Marína',
+    (12,9): 'Izabela',
+    (12,10): 'Radúz',
+    (12,11): 'Hilda',
+    (12,12): 'Otília',
+    (12,13): 'Lucia',
+    (12,14): 'Branislava\\, Bronislava',
+    (12,15): 'Ivica',
+    (12,16): 'Albína',
+    (12,17): 'Kornélia',
+    (12,18): 'Sláva',
+    (12,19): 'Judita',
+    (12,20): 'Dagmara',
+    (12,21): 'Bohdan',
+    (12,22): 'Adela',
+    (12,23): 'Nadežda',
+    (12,24): 'Adam\\, Eva',
+    (12,26): 'Prvý sviatok vianočný',
+    (12,27): 'Štefan',
+    (12,28): 'Filoména',
+    (12,29): 'Ivana\\, Ivona',
+    (12,30): 'Milada',
+    (12,31): 'Dávid',
 }
-
-def esc(s): return s.replace('\\','\\\\').replace(';','\\;').replace(',','\\,').replace('\n','\\n')
-def add(lines, d, title, end=None):
-    end = end or (d + timedelta(days=1))
-    uid = uuid.uuid5(uuid.NAMESPACE_URL, f'robert-sk:{d}:{title}')
-    lines += ['BEGIN:VEVENT',f'UID:{uid}@github',f'DTSTART;VALUE=DATE:{d:%Y%m%d}',f'DTEND;VALUE=DATE:{end:%Y%m%d}',f'SUMMARY:{esc(title)}','END:VEVENT']
+# Official published terms for Nitriansky kraj. Keep only terms supported by published schedules.
+SCHOOL={
+  2026:[("2026-12-23","2027-01-08","🎄 Vianočné prázdniny")],
+  2027:[("2027-02-01","2027-02-02","🏫 Polročné prázdniny"),("2027-03-01","2027-03-06","🏫 Jarné prázdniny – Nitriansky kraj"),("2027-03-25","2027-03-31","🐣 Veľkonočné prázdniny"),("2027-07-01","2027-09-01","☀️ Letné prázdniny"),("2027-10-28","2027-10-30","🍂 Jesenné prázdniny"),("2027-12-23","2028-01-08","🎄 Vianočné prázdniny")]
+}
+def esc(s): return s.replace("\\","\\\\").replace(";","\\;").replace(",","\\,").replace("\n","\\n")
+def add(a,d,title,end=None):
+    # Rolling feed: no events before today.
+    if (end or d+timedelta(days=1)) <= TODAY: return
+    if d < TODAY: d=TODAY
+    end=end or d+timedelta(days=1)
+    uid=uuid.uuid5(uuid.NAMESPACE_URL,f"robert-sk:{d}:{title}")
+    a += ["BEGIN:VEVENT",f"UID:{uid}@github",f"DTSTART;VALUE=DATE:{d:%Y%m%d}",f"DTEND;VALUE=DATE:{end:%Y%m%d}",f"SUMMARY:{esc(title)}","END:VEVENT"]
 def easter(y):
     a=y%19;b=y//100;c=y%100;d=b//4;e=b%4;f=(b+8)//25;g=(b-f+1)//3;h=(19*a+b-d-g+15)%30;i=c//4;k=c%4;l=(32+2*e+2*i-h-k)%7;m=(a+11*h+22*l)//451
     return date(y,(h+l-7*m+114)//31,((h+l-7*m+114)%31)+1)
@@ -37,39 +391,30 @@ def last_sunday(y,m):
 def nth_sunday(y,m,n):
     d=date(y,m,1); return d+timedelta(days=(6-d.weekday())%7+7*(n-1))
 
-# Fixed Slovak namedays. Date mapping is stable; update source table only if official calendar changes.
-NAMES = {
-(1,1):'Alexandra, Sandra, Karina',(1,2):'Daniela',(1,3):'Drahoslav',(1,4):'Andrea, Artur',(1,5):'Antónia',(1,6):'Bohuslava, Atila',(1,7):'Severín',(1,8):'Alexej, Alex, Alexia',(1,9):'Daša',
-}
-# The checked-in feed remains the complete source of current name days. See README before expanding years.
-
-def generate():
-    lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Robert Galaba//SK Calendar//SK','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Robert – SK kalendár','X-WR-TIMEZONE:Europe/Bratislava','X-PUBLISHED-TTL:PT12H','REFRESH-INTERVAL;VALUE=DURATION:PT12H']
-    for y in range(START_YEAR, END_YEAR+1):
-        for (m,d),n in NAMES.items(): add(lines,date(y,m,d),n)
+def main():
+    L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Robert Galaba//SK Calendar//SK","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Robert – SK kalendár","X-WR-TIMEZONE:Europe/Bratislava","X-PUBLISHED-TTL:PT12H","REFRESH-INTERVAL;VALUE=DURATION:PT12H"]
+    for y in range(START_YEAR,END_YEAR+1):
+        for (m,d),n in NAMES.items():
+            try: add(L,date(y,m,d),n)
+            except ValueError: pass
         e=easter(y)
-        fixed=[(1,1,'🇸🇰 Deň vzniku Slovenskej republiky'),(1,6,'🇸🇰 Zjavenie Pána – Traja králi'),(5,1,'🇸🇰 Sviatok práce'),(5,8,'🇸🇰 Deň víťazstva nad fašizmom'),(7,5,'🇸🇰 Sv. Cyril a Metod'),(8,29,'🇸🇰 Výročie SNP'),(9,1,'🇸🇰 Deň Ústavy SR'),(9,15,'🇸🇰 Sedembolestná Panna Mária'),(10,28,'🇸🇰 Deň vzniku samostatného česko-slovenského štátu'),(11,1,'🇸🇰 Sviatok Všetkých svätých'),(11,17,'🇸🇰 Deň boja za slobodu a demokraciu'),(12,24,'🇸🇰 Štedrý deň'),(12,25,'🇸🇰 Prvý sviatok vianočný'),(12,26,'🇸🇰 Druhý sviatok vianočný')]
-        for m,d,t in fixed: add(lines,date(y,m,d),t)
-        add(lines,e-timedelta(days=2),'🇸🇰 Veľký piatok'); add(lines,e+timedelta(days=1),'🇸🇰 Veľkonočný pondelok')
-        add(lines,last_sunday(y,3),'⏰ Začína letný čas'); add(lines,last_sunday(y,10),'⏰ Začína zimný čas')
-        add(lines,date(y,2,14),'❤️ Valentín'); add(lines,nth_sunday(y,5,2),'❤️ Deň matiek'); add(lines,nth_sunday(y,6,3),'❤️ Deň otcov')
-        add(lines,date(y,3,8),'🌷 Medzinárodný deň žien'); add(lines,date(y,6,1),'🧒 Medzinárodný deň detí'); add(lines,date(y,4,22),'🌍 Deň Zeme'); add(lines,date(y,12,6),'🎅 Mikuláš'); add(lines,date(y,12,31),'🎆 Silvester')
-        for s,e2,t in SCHOOL_HOLIDAYS.get(y,[]): add(lines,date.fromisoformat(s),t,date.fromisoformat(e2))
-    # Accurate astronomy generated if skyfield is available in GitHub Actions.
-    try:
-        from skyfield.api import load
-        from skyfield import almanac
-        ts=load.timescale(); eph=load('de421.bsp')
-        t0=ts.utc(START_YEAR,1,1); t1=ts.utc(END_YEAR+1,1,1)
-        times, phases=almanac.find_discrete(t0,t1,almanac.moon_phases(eph))
-        for t,p in zip(times,phases):
-            if int(p) in (0,2):
-                d=t.utc_datetime().date(); add(lines,d,'🌑 Nov' if int(p)==0 else '🌕 Spln')
-        times,seasons=almanac.find_discrete(t0,t1,almanac.seasons(eph))
-        labels=['🌱 Začiatok jari','☀️ Začiatok leta','🍂 Začiatok jesene','❄️ Začiatok zimy']
-        for t,s in zip(times,seasons): add(lines,t.utc_datetime().date(),labels[int(s)])
-    except Exception as ex:
-        print('Astronomy skipped:',ex)
-    lines.append('END:VCALENDAR')
-    OUT.write_text('\r\n'.join(lines)+'\r\n',encoding='utf-8')
-if __name__=='__main__': generate()
+        fixed=[(1,1,"🇸🇰 Deň vzniku Slovenskej republiky"),(1,6,"🇸🇰 Zjavenie Pána – Traja králi"),(5,1,"🇸🇰 Sviatok práce"),(5,8,"🇸🇰 Deň víťazstva nad fašizmom"),(7,5,"🇸🇰 Sv. Cyril a Metod"),(8,29,"🇸🇰 Výročie SNP"),(9,1,"🇸🇰 Deň Ústavy SR"),(9,15,"🇸🇰 Sedembolestná Panna Mária"),(10,28,"🇸🇰 Deň vzniku samostatného česko-slovenského štátu"),(11,1,"🇸🇰 Sviatok Všetkých svätých"),(11,17,"🇸🇰 Deň boja za slobodu a demokraciu"),(12,24,"🇸🇰 Štedrý deň"),(12,25,"🇸🇰 Prvý sviatok vianočný"),(12,26,"🇸🇰 Druhý sviatok vianočný")]
+        for m,d,t in fixed:add(L,date(y,m,d),t)
+        add(L,e-timedelta(days=2),"🇸🇰 Veľký piatok");add(L,e+timedelta(days=1),"🇸🇰 Veľkonočný pondelok")
+        add(L,last_sunday(y,3),"⏰ Začína letný čas");add(L,last_sunday(y,10),"⏰ Začína zimný čas")
+        for d,t in [(date(y,2,14),"❤️ Valentín"),(nth_sunday(y,5,2),"❤️ Deň matiek"),(nth_sunday(y,6,3),"❤️ Deň otcov"),(date(y,3,8),"🌷 Medzinárodný deň žien"),(date(y,6,1),"🧒 Medzinárodný deň detí"),(date(y,4,22),"🌍 Deň Zeme"),(date(y,12,6),"🎅 Mikuláš"),(date(y,12,31),"🎆 Silvester")]:add(L,d,t)
+        for s,e2,t in SCHOOL.get(y,[]):add(L,date.fromisoformat(s),t,date.fromisoformat(e2))
+    # Accurate Moon phases + astronomical season starts, generated by Skyfield.
+    from skyfield.api import load
+    from skyfield import almanac
+    ts=load.timescale(); eph=load("de421.bsp")
+    t0=ts.utc(START_YEAR,1,1); t1=ts.utc(END_YEAR+1,1,1)
+    times,ph=almanac.find_discrete(t0,t1,almanac.moon_phases(eph))
+    for t,p in zip(times,ph):
+        q=int(p)
+        if q in (0,2): add(L,t.utc_datetime().date(),"🌑 Nov" if q==0 else "🌕 Spln")
+    times,seasons=almanac.find_discrete(t0,t1,almanac.seasons(eph)); labels=["🌱 Začiatok jari","☀️ Začiatok leta","🍂 Začiatok jesene","❄️ Začiatok zimy"]
+    for t,s in zip(times,seasons):add(L,t.utc_datetime().date(),labels[int(s)])
+    L.append("END:VCALENDAR")
+    OUT.write_text("\r\n".join(L)+"\r\n",encoding="utf-8")
+if __name__=="__main__":main()
